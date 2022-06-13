@@ -1,0 +1,94 @@
+-- user dimention and metrics in big query
+SELECT
+   case 
+  when totals.newVisits =1 then 'newVisits' else  'Return user' end as user_type,count(1)
+
+ FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` GROUP BY user_type
+ LIMIT 1000
+ 
+
+-- Visit number by visitor id
+SELECT
+distinct (visitId),
+count (visitNumber) as count_session
+ FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` 
+ group by 1
+ LIMIT 1000
+
+-- count number of visitor complete sessions
+
+SELECT
+
+visitNumber as count_session
+ FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` 
+
+ LIMIT 1000
+
+-- now i want to understand user
+SELECT 
+DISTINCT (fullVisitorId) as users
+ FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` 
+ LIMIT 1000
+
+
+
+--  want to checck new user
+SELECT distinct (case  when totals.newVisits =1 then fullVisitorId else null end )as new_users
+ FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` 
+ LIMIT 1000
+-- new session with percentage
+
+SELECT 
+count (distinct (case  when totals.newVisits =1 then fullVisitorId else null end ))/count (distinct(concat(fullVisitorId, cast(visitstarttime as string)))) as perc
+ FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` 
+ LIMIT 1000
+
+SELECT
+visitstarttime
+FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` 
+ LIMIT 1000
+
+SELECT 
+distinct(concat(fullVisitorId, cast(visitstarttime as string))) as fullvisit_time 
+ FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` 
+ LIMIT 1000
+
+SELECT 
+   count(distinct concat(fullvisitorid, cast(visitstarttime as string))) / count(distinct fullvisitorid) as number_of_sessions_per_user,
+  -- hits (metric)
+   FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` 
+ LIMIT 1000
+
+SELECT 
+  sum((select totals.hits from unnest(hits) group by totals.hits)) as hits
+  
+   FROM `bigquery-public-data.google_analytics_sample.ga_sessions_20170801` 
+ LIMIT 1000
+
+
+
+
+select
+  -- user type (dimension)
+  case when totals.newvisits = 1 then 'New visitor' else 'Returning visitor' end as user_type,
+  -- count of sessions (dimension)
+  visitnumber as count_of_sessions,
+  -- users (metric)
+  count(distinct fullvisitorid) as users,
+  -- new users (metric)
+  count(distinct(case when totals.newvisits = 1 then fullvisitorid else null end)) as new_users,
+  -- % new sessions (metric)
+  count(distinct(case when totals.newvisits = 1 then fullvisitorid else null end)) / count(distinct concat(fullvisitorid, cast(visitstarttime as string))) as percentage_new_sessions,
+  -- number of sessions per user (metric)
+  count(distinct concat(fullvisitorid, cast(visitstarttime as string))) / count(distinct fullvisitorid) as number_of_sessions_per_user,
+  -- hits (metric)
+  sum((select totals.hits from unnest(hits) group by totals.hits)) as hits
+from
+  `bigquery-public-data.google_analytics_sample.ga_sessions_20160801`
+group by
+  user_type,
+  count_of_sessions
+order by
+  count_of_sessions
+
+
